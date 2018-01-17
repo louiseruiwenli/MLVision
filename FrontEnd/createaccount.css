@@ -1,0 +1,34 @@
+html,body{
+  width: 100%;
+  height: 100%;
+}
+
+body{
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+}
+
+a{
+  text-decoration: none;
+  color: black;
+}
+
+a:hover{
+  text-decoration: none;
+  color: black;
+}
+
+.page-body{
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.button-wrapper{
+  justify-content: center;
+  width: 30%;
+  align-self: center;
+  margin: 50px;
+  display: flex;
+}
