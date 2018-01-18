@@ -25,10 +25,72 @@ a:hover{
   flex-direction: column;
 }
 
-.button-wrapper{
-  justify-content: center;
+.usernameinfo{
+  flex-grow: 1;
+  justify-content: space-evenly;
   width: 30%;
+  align-self: center;
+  align-items: center;
+  margin: 50px;
+  display: flex;
+  flex-direction: column;
+}
+
+input:focus{
+  outline: none;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  width: 100%;
+  margin: 0 auto;
+  border-radius: 2px;
+  padding: 1.4rem 2rem 1.6rem;
+}
+
+.input-wrapper:after {
+    content: "";
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    z-index: 999;
+    height: 2px;
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
+    background-position: 0% 0%;
+    background: linear-gradient(to right, #B294FF, #57E6E6, #FEFFB8, #57E6E6, #B294FF, #57E6E6);
+    background-size: 500% auto;
+    animation: 3s linear infinite;
+}
+
+.input-wrapper input {
+  flex-grow: 1;
+  font-size: 3rem;
+  line-height: 5rem;
+  border: none;
+  vertical-align: middle;
+}
+
+#afterusername{
+  width: 50%;
+}
+
+.camerawindow{
+  flex-grow: 1;
+  justify-content: space-evenly;
+  width: 40%;
   align-self: center;
   margin: 50px;
   display: flex;
+  flex-direction: column;
+}
+.video{
+  width: 100%;
+}
+#videoElement {
+    width: 100%;
+    height: 375px;
+    background-color: #666;
 }
