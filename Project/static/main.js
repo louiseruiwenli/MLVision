@@ -1,10 +1,10 @@
 $(document).ready(function(){
   $('#login').click(function(){
-    window.location = "login.html";
+    window.location = "/login";
   });
 
   $('#createaccount').click(function(){
-    window.location = "createaccount.html";
+    window.location = "/createaccount";
   });
 
 
