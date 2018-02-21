@@ -15,14 +15,21 @@
     <h2><a href="/">MLVision Facial Motion Detection System</a></h2>
   </div>
   <div class="page-body">
-    <div class="usernameinfo text-center" id="username-wrapper">
-      <h3>Enter your username: </h3>
-      <div class="input-wrapper">
-        <input class="text-center" placeholder="username"></input>
-      </div>
 
-      <button id="afterusername" class="btn btn-primary" type="submit">Continue</button>
-    </div>
+        <div class="usernameinfo text-center" id="username-wrapper">
+          <h3>Enter your username: </h3>
+
+          {% from "_formhelpers.html" import render_field %}
+          <form method="POST" action=" ">
+            <div class="input-wrapper">
+              {{render_field(form.username, class_="text-center")}}
+            </div>
+
+            <button id="afterusername" class="btn btn-primary" type="submit">Continue</button>
+          </form>
+        </div>
+
+
     <div class="camerawindow">
       <div class="notes text-center">
         <p>Learning your face..<br> Take three photos at different angles..</p>

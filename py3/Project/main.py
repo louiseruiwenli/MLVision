@@ -2,6 +2,11 @@ import os
 import sqlite3
 from flask import Flask, request, session, g, redirect, url_for, abort, \
      render_template, flash
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin
+from wtforms import Form, StringField, TextAreaField, PasswordField, validators
+
+
 app = Flask(__name__) # create the application instance :)
 app.config.from_object(__name__) # load config from this file , flaskr.py
 
@@ -15,11 +20,32 @@ app.config.update(dict(
 app.config.from_envvar('FLASKR_SETTINGS', silent=True)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
+# Set up login database config
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///login.db'
+app.config['SECRET_KEY'] = 'thisissecret'
+
+db = SQLAlchemy(app)
+login_manager = LoginManager();
+login_manager.init_app(app)
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key = True)
+    username = db.Column(db.String(30),unique = True)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+
+
 def connect_db():
     """Connects to the specific database."""
     rv = sqlite3.connect(app.config['DATABASE'])
     rv.row_factory = sqlite3.Row
     return rv
+
+
 
 @app.route('/')
 def show_index():
@@ -29,9 +55,16 @@ def show_index():
 def login():
     return render_template('login.html')
 
-@app.route('/createaccount')
+
+class RegisterForm(Form):
+    username = StringField('Username', [validators.Length(min=4, max=30)])
+
+@app.route('/createaccount', methods=['GET', 'POST'])
 def createaccount():
-    return render_template('createaccount.html')
+    form = RegisterForm(request.form)
+    #if request.method=='POST' and form.validate():
+    
+    return render_template('createaccount.html', form=form)
 
 @app.route('/recog')
 def recog():
@@ -51,7 +84,7 @@ def recog():
     video_capture = cv2.VideoCapture(0)
 
     # Load a sample picture and learn how to recognize it.
-    obama_image = face_recognition.load_image_file("songjie_cai.jpg")
+    obama_image = face_recognition.load_image_file("louise.jpg")
     obama_face_encoding = face_recognition.face_encodings(obama_image)[0]
 
     # Initialize some variables
@@ -83,7 +116,7 @@ def recog():
             name = "Unknown"
 
             if match[0]:
-                name = "Songjie Cai"
+                name = "Louise"
 
             face_names.append(name)
 
