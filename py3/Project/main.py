@@ -2,9 +2,13 @@ import os
 import sqlite3
 from flask import Flask, request, session, g, redirect, url_for, abort, \
      render_template, flash
+from flask import Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
+from camera import VideoCamera
+
+#from webcamvideostream import WebcamVideoStream
 
 
 app = Flask(__name__) # create the application instance :)
@@ -56,6 +60,75 @@ def login():
     return render_template('login.html')
 
 
+
+def gen(camera):
+    import face_recognition
+    import cv2
+    
+    obama_image = face_recognition.load_image_file("louise.jpg")
+    obama_face_encoding = face_recognition.face_encodings(obama_image)[0]
+    #video_capture = cv2.VideoCapture(0)
+    
+    #if not video_capture.isOpened():
+    #    raise RuntimeError('Could not start camera')
+    
+    face_locations = []
+    face_encodings = []
+    face_names = []
+    process_this_frame = True
+
+    while True:
+        frame = camera.get_frame()
+        
+        # Resize frame of video to 1/4 size for faster face recognition processing
+        small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+            
+        # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
+        rgb_small_frame = small_frame[:, :, ::-1]
+        
+        # Only process every other frame of video to save time
+        if process_this_frame:
+            # Find all the faces and face encodings in the current frame of video
+            face_locations = face_recognition.face_locations(rgb_small_frame)
+            face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
+    
+        face_names = []
+        for face_encoding in face_encodings:
+            # See if the face is a match for the known face(s)
+            match = face_recognition.compare_faces([obama_face_encoding], face_encoding)
+            name = "Unknown"
+            
+            if match[0]:
+                name = "Louise"
+            
+            face_names.append(name)
+        
+        process_this_frame = not process_this_frame
+        
+        
+        # Display the results
+        for (top, right, bottom, left), name in zip(face_locations, face_names):
+            # Scale back up face locations since the frame we detected in was scaled to 1/4 size
+            top *= 4
+            right *= 4
+            bottom *= 4
+            left *= 4
+            
+            # Draw a box around the face
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+            
+            # Draw a label with a name below the face
+            cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
+            font = cv2.FONT_HERSHEY_DUPLEX
+            cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+    
+        ret, jpeg = cv2.imencode('.jpg', frame)
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
+
+
+
+
 class RegisterForm(Form):
     username = StringField('Username', [validators.Length(min=4, max=30)])
 
@@ -82,8 +155,13 @@ def recog():
 
     # Get a reference to webcam #0 (the default one)
     video_capture = cv2.VideoCapture(0)
+    
+    if not video_capture.isOpened():
+        raise RuntimeError('Could not start camera')
 
     # Load a sample picture and learn how to recognize it.
+    
+    #obama_image = face_recognition.load_image_file("/root/face_recognition/Project/louise.jpg")
     obama_image = face_recognition.load_image_file("louise.jpg")
     obama_face_encoding = face_recognition.face_encodings(obama_image)[0]
 
@@ -138,6 +216,7 @@ def recog():
             cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
             font = cv2.FONT_HERSHEY_DUPLEX
             cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+                
 
         # Display the resulting image
         cv2.imshow('Video', frame)
@@ -149,3 +228,11 @@ def recog():
     # Release handle to the webcam
     video_capture.release()
     cv2.destroyAllWindows()
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(gen(VideoCamera()),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=80)

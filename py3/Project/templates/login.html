@@ -30,10 +30,15 @@
       <div class="notes text-center">
         <p>Detecting face...</p>
       </div>
-      <div class="video">
-        <video autoplay="true" id="videoElement">
 
+        <!--
+        <video id="bg" src="{{ url_for('recog') }}">
         </video>
+        -->
+
+        <img src="{{url_for('video_feed')}}" width="50%">
+
+
       </div>
     </div>
   </div>
