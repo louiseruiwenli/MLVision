@@ -1,0 +1,16 @@
+{% extends "base_layout.html" %}
+
+  {% block body_content %}
+  <div class="camerawindow">
+    <div class="notes text-center">
+      <p>Learning your face..<br> Take three photos at different angles..</p>
+    </div>
+    <div class="video">
+      <video autoplay="true" id="videoElement">
+      </video>
+
+    </div>
+
+    <button id="takephoto" class="btn btn-primary" type="submit">Take Photo</button>
+  </div>
+  {% endblock%}

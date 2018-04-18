@@ -1,26 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>MLVision</title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-  <link rel="stylesheet" href="/static/main.css?1">
-  <script src="/static/jquery-3.2.1.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-  <script src="/static/main.js?1"></script>
-</head>
+{% extends "base_layout.html" %}
 
-<body>
-  <div class="page-header text-center">
-    <h2><a href="main.html">MLVision Facial Motion Detection System</a></h2>
-  </div>
-  <div class="page-body">
+{% block body_content %}
+
     <div class="button-wrapper login-wrapper">
       <button id="login" class="btn btn-primary"><h4>Login</h4></button>
     </div>
     <div class="button-wrapper createaccount-wrapper">
       <button id="createaccount" class="btn btn-primary"><h4>Create Account</h4></button>
     </div>
-  </div>
-</body>
-</html>
+
+{% endblock %}

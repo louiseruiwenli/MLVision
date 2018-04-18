@@ -4,7 +4,7 @@ $(document).ready(function(){
   });
 
   $('#createaccount').click(function(){
-    window.location = "/createaccount";
+    window.location = "/register";
   });
 
 

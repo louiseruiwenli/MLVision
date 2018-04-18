@@ -1,5 +1,5 @@
 import os
-import sqlite3
+import sqlite3 as sql
 from flask import Flask, request, session, g, redirect, url_for, abort, \
      render_template, flash
 from flask import Response
@@ -8,11 +8,32 @@ from flask_login import LoginManager, UserMixin
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 from camera import VideoCamera
 
+import face_recognition
+import cv2
+
 #from webcamvideostream import WebcamVideoStream
 
 
 app = Flask(__name__) # create the application instance :)
 app.config.from_object(__name__) # load config from this file , flaskr.py
+
+######################Add User With Login System in the Database#############################
+def insertUser(username,password):
+    con = sql.connect("database.db")
+    cur = con.cursor()
+    cur.execute("INSERT INTO users (username,password,photourl) VALUES (?,?,?)", (username,password,photourl))
+    con.commit()
+    con.close()
+
+def retrieveUsers():
+    con = sql.connect("database.db")
+    cur = con.cursor()
+    cur.execute("SELECT username, password, photourl FROM users")
+    users = cur.fetchall()
+    con.close()
+    return users
+
+######################################Database setup end#######################################
 
 # Load default config and override config from an environment variable
 app.config.update(dict(
@@ -62,8 +83,7 @@ def login():
 
 
 def gen(camera):
-    import face_recognition
-    import cv2
+    
     
     obama_image = face_recognition.load_image_file("louise.jpg")
     face_landmarks_list = face_recognition.face_landmarks(obama_image)
@@ -173,13 +193,37 @@ def gen(camera):
 class RegisterForm(Form):
     username = StringField('Username', [validators.Length(min=4, max=30)])
 
-@app.route('/createaccount', methods=['GET', 'POST'])
-def createaccount():
-    form = RegisterForm(request.form)
+####################################################Registration#########################################
+username = ""
+password = ""
+    #def register():
+    #form = RegisterForm(request.form)
     #if request.method=='POST' and form.validate():
-    
-    return render_template('createaccount.html', form=form)
+@app.route('/register', methods=['GET', 'POST'])
+def Username():
+    if request.method=='POST':
+        print ('zzz')
+        session['username'] = request.form['username']
+        return redirect('/register2')
+    return render_template('register_username.html')
 
+
+@app.route('/register2', methods=['GET', 'POST'])
+def Password():
+    if request.method=='POST':
+        session['password'] = request.form['password']
+        return redirect('/register3')
+    return render_template('register_password.html')
+
+@app.route('/register3', methods=['GET', 'POST'])
+def Photourl():
+    print (session['username'])
+    print (session['password'])
+    return render_template('register_photo.html')
+
+
+
+####################################################Registration End#########################################
 @app.route('/recog')
 def recog():
     import face_recognition
