@@ -1,13 +1,16 @@
 import os
 import sqlite3 as sql
 from flask import Flask, request, session, g, redirect, url_for, abort, \
-     render_template, flash
+     render_template, flash, abort
 from flask import Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 from camera import VideoCamera
 
+import time
+import math
+from random import *
 import face_recognition
 import cv2
 
@@ -199,10 +202,12 @@ password = ""
     #def register():
     #form = RegisterForm(request.form)
     #if request.method=='POST' and form.validate():
+take_photo = False
+face_detected = False
+real_person_varified = False
 @app.route('/register', methods=['GET', 'POST'])
 def Username():
     if request.method=='POST':
-        print ('zzz')
         session['username'] = request.form['username']
         return redirect('/register2')
     return render_template('register_username.html')
@@ -219,7 +224,188 @@ def Password():
 def Photourl():
     print (session['username'])
     print (session['password'])
+    global take_photo, face_detected, real_person_varified
+    
+
+    if request.method=='POST':
+        print ("requested")
+
+        return redirect('/profile')
     return render_template('register_photo.html')
+
+
+def registerVideoStream(camera):
+    global take_photo, face_detected, real_person_varified
+    obama_image = face_recognition.load_image_file("louise.jpg")
+    face_landmarks_list = face_recognition.face_landmarks(obama_image)
+    obama_face_encoding = face_recognition.face_encodings(obama_image)[0]
+    start = 0
+    
+    face_locations = []
+    face_encodings = []
+    face_names = []
+    process_this_frame = True
+    face_detected = False;
+    real_person_varified = False
+    start_counter = False
+    
+    COUNTER = 0
+    TOTAL = 0
+    EYE_AR_CONSEC_FRAMES = 3
+    EYE_AR_THRESH = 0.2
+    
+    
+    number = randint(1,5)
+    
+    def eye_aspect_ratio(eye):
+        from scipy.spatial import distance as dist
+        # compute the euclidean distances between the two sets of
+        # vertical eye landmarks (x, y)-coordinates
+        A = dist.euclidean(eye[1], eye[5])
+        B = dist.euclidean(eye[2], eye[4])
+        # compute the euclidean distance between the horizontal
+        # eye landmark (x, y)-coordinates
+        C = dist.euclidean(eye[0], eye[3])
+        # compute the eye aspect ratio
+        ear = (A + B) / (2.0 * C)
+        # return the eye aspect ratio
+        return ear
+    
+    while True:
+        frame = camera.get_frame()
+        
+        # Resize frame of video to 1/4 size for faster face recognition processing
+        small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+        
+        # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
+        rgb_small_frame = small_frame[:, :, ::-1]
+        
+        # Only process every other frame of video to save time
+        if process_this_frame:
+            # Find all the faces and face encodings in the current frame of video
+            face_locations = face_recognition.face_locations(rgb_small_frame)
+            face_landmarks_list = face_recognition.face_landmarks(rgb_small_frame)
+            face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
+        
+        face_names = []
+        for face_encoding in face_encodings:
+            # See if the face is a match for the known face(s)
+            match = face_recognition.compare_faces([obama_face_encoding], face_encoding)
+            name = "Unknown"
+            
+            if match[0]:
+                name = "Louise"
+            
+            face_names.append(name)
+
+        if not face_encodings:
+            face_detected = False
+            #session['face_detected'] = False
+        
+        process_this_frame = not process_this_frame
+        
+        if face_landmarks_list and face_landmarks_list[0]:
+            leftEye = face_landmarks_list[0]['left_eye']
+            rightEye = face_landmarks_list[0]['right_eye']
+            leftEAR = eye_aspect_ratio(leftEye)
+            rightEAR = eye_aspect_ratio(rightEye)
+            ear = (leftEAR + rightEAR) / 2.0
+            # check to see if the eye aspect ratio is below the blink
+            # threshold, and if so, increment the blink frame counter
+            if ear < EYE_AR_THRESH:
+                COUNTER += 1
+            # otherwise, the eye aspect ratio is not below the blink threshold
+            else:
+                # if the eyes were closed for a sufficient number of
+                # then increment the total number of blinks
+                if COUNTER >= EYE_AR_CONSEC_FRAMES:
+                    TOTAL += 1
+                    # reset the eye frame counter
+                    COUNTER = 0
+    
+        # Display the results
+        for (top, right, bottom, left), name in zip(face_locations, face_names):
+            # Scale back up face locations since the frame we detected in was scaled to 1/4 size
+            top *= 4
+            right *= 4
+            bottom *= 4
+            left *= 4
+            
+            # Draw a box around the face
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+            
+            # Draw a label with a name below the face
+            cv2.rectangle(frame, (left, bottom), (right, bottom), (0, 0, 255), cv2.FILLED)
+            face_detected = True
+            #session['face_detected'] = True
+
+
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        if face_detected and not real_person_varified:
+            cv2.putText(frame, "Face Detected", (100, 100), font, 1.0, (0, 0, 255), 3)
+            cv2.putText(frame, "Now Varifying Real Person...", (100, 150), font, 0.7, (0, 0, 255), 3)
+            cv2.putText(frame, "Blink {} times".format(number), (100, 200), font, 0.7, (0, 0, 255), 3)
+            cv2.putText(frame, "Blinks: {}".format(TOTAL), (100, 250),font, 0.7, (0, 0, 255), 3)
+            #cv2.putText(frame, "EAR: {:.2f}".format(ear), (300, 30),font, 0.7, (0, 0, 255), 3)
+        elif face_detected and real_person_varified:
+            cv2.putText(frame, "Real Person Varified", (100, 100), font, 1.0, (0, 0, 255), 3)
+            cv2.putText(frame, "Your photo will be taken in 5 seconds", (100, 150), font, 1.0, (0, 0, 255), 3)
+            if not start_counter:
+                start = time.time()
+                start_counter = True
+        elif not face_detected:
+            real_person_varified = False
+            #session['real_person_varified'] = False
+            TOTAL = 0
+            start_counter = False
+            number = randint(1,5)
+
+        if math.floor(time.time()-start) == 1:
+            cv2.putText(frame, "5", (100, 200), font, 1.0, (0, 0, 255), 7)
+
+        if math.floor(time.time()-start) == 2:
+            cv2.putText(frame, "4", (100, 200), font, 1.0, (0, 0, 255), 7)
+
+        if math.floor(time.time()-start) == 3:
+            cv2.putText(frame, "3", (100, 200), font, 1.0, (0, 0, 255), 7)
+
+        if math.floor(time.time()-start) == 4:
+            cv2.putText(frame, "2", (100, 200), font, 1.0, (0, 0, 255), 7)
+        
+        
+        if math.floor(time.time()-start) == 5:
+            cv2.putText(frame, "1", (100, 200), font, 1.0, (0, 0, 255), 7)
+
+        if math.floor(time.time()-start) == 6:
+            #save the current frame as jpg file
+            path = '/photo/'
+            cv2.imwrite(os.path.join(path,'a.jpg'),frame)
+            print (os.path.join(path,'a.jpg'))
+            cv2.putText(frame, "Photo taken! Now press 'Login' ", (100, 200), font, 1.0, (0, 0, 255), 5)
+            break
+        
+        #if math.floor(time.time()-start) == 7:
+        #break
+
+        if face_detected and TOTAL == number:
+            real_person_varified = True
+
+        
+        ret, jpeg = cv2.imencode('.jpg', frame)
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
+
+    print ("Before return")
+    #video_capture.release()
+    cv2.destroyAllWindows()
+#redirect('/profile')
+
+@app.route('/register_video_feed', methods=['GET', 'POST'])
+def register_video_feed():
+    response =  Response(registerVideoStream(VideoCamera()),
+                         mimetype='multipart/x-mixed-replace; boundary=frame')
+    print (response)
+    return response
 
 
 
@@ -318,6 +504,12 @@ def recog():
 def video_feed():
     return Response(gen(VideoCamera()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+def redirect_to_home():
+    return redirect('/profile')
+
+@app.route('/profile')
+def profile():
+    return render_template('profile.html', user=session['username'])
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=80)

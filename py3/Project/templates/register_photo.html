@@ -3,14 +3,16 @@
   {% block body_content %}
   <div class="camerawindow">
     <div class="notes text-center">
-      <p>Learning your face..<br> Take three photos at different angles..</p>
-    </div>
-    <div class="video">
-      <video autoplay="true" id="videoElement">
-      </video>
-
+      <p>Learning your face..<br> {{text}}</p>
     </div>
 
-    <button id="takephoto" class="btn btn-primary" type="submit">Take Photo</button>
+    {% from "_formhelpers.html" import render_field %}
+    <form method="POST" action="/register3">
+      <div class="video">
+        <img class="videostream" src="{{url_for('register_video_feed')}}">
+      </div>
+
+      <button id="takephoto" class="btn btn-primary" type="submit">Take Photo</button>
+    </form>
   </div>
   {% endblock%}

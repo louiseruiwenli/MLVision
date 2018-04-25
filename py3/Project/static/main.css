@@ -38,3 +38,9 @@ button{
   width: 200px;
   justify-content: center;
 }
+
+.videostream{
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
