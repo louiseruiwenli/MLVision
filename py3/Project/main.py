@@ -24,14 +24,16 @@ app.config.from_object(__name__) # load config from this file , flaskr.py
 def insertUser(username,password):
     con = sql.connect("database.db")
     cur = con.cursor()
-    cur.execute("INSERT INTO users (username,password,photourl) VALUES (?,?,?)", (username,password,photourl))
+    print (username)
+    print (password)
+    cur.execute("INSERT INTO users (username,password) VALUES (?,?)", (username,password))
     con.commit()
     con.close()
 
 def retrieveUsers():
     con = sql.connect("database.db")
     cur = con.cursor()
-    cur.execute("SELECT username, password, photourl FROM users")
+    cur.execute("SELECT username, password FROM users")
     users = cur.fetchall()
     con.close()
     return users
@@ -197,14 +199,6 @@ class RegisterForm(Form):
     username = StringField('Username', [validators.Length(min=4, max=30)])
 
 ####################################################Registration#########################################
-username = ""
-password = ""
-    #def register():
-    #form = RegisterForm(request.form)
-    #if request.method=='POST' and form.validate():
-take_photo = False
-face_detected = False
-real_person_varified = False
 @app.route('/register', methods=['GET', 'POST'])
 def Username():
     if request.method=='POST':
@@ -222,20 +216,15 @@ def Password():
 
 @app.route('/register3', methods=['GET', 'POST'])
 def Photourl():
-    print (session['username'])
-    print (session['password'])
-    global take_photo, face_detected, real_person_varified
     
-
     if request.method=='POST':
-        print ("requested")
+        insertUser(session['username'], session['password'])
 
         return redirect('/profile')
     return render_template('register_photo.html')
 
 
-def registerVideoStream(camera):
-    global take_photo, face_detected, real_person_varified
+def registerVideoStream(camera,username):
     obama_image = face_recognition.load_image_file("louise.jpg")
     face_landmarks_list = face_recognition.face_landmarks(obama_image)
     obama_face_encoding = face_recognition.face_encodings(obama_image)[0]
@@ -248,6 +237,7 @@ def registerVideoStream(camera):
     face_detected = False;
     real_person_varified = False
     start_counter = False
+    take_photo = False
     
     COUNTER = 0
     TOTAL = 0
@@ -337,7 +327,7 @@ def registerVideoStream(camera):
             # Draw a label with a name below the face
             cv2.rectangle(frame, (left, bottom), (right, bottom), (0, 0, 255), cv2.FILLED)
             face_detected = True
-            #session['face_detected'] = True
+  
 
 
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -355,11 +345,12 @@ def registerVideoStream(camera):
                 start_counter = True
         elif not face_detected:
             real_person_varified = False
-            #session['real_person_varified'] = False
+            take_photo = False
             TOTAL = 0
             start_counter = False
             number = randint(1,5)
 
+        #photo taking count down
         if math.floor(time.time()-start) == 1:
             cv2.putText(frame, "5", (100, 200), font, 1.0, (0, 0, 255), 7)
 
@@ -377,15 +368,20 @@ def registerVideoStream(camera):
             cv2.putText(frame, "1", (100, 200), font, 1.0, (0, 0, 255), 7)
 
         if math.floor(time.time()-start) == 6:
-            #save the current frame as jpg file
-            path = '/photo/'
-            cv2.imwrite(os.path.join(path,'a.jpg'),frame)
-            print (os.path.join(path,'a.jpg'))
-            cv2.putText(frame, "Photo taken! Now press 'Login' ", (100, 200), font, 1.0, (0, 0, 255), 5)
-            break
+            #save the current frame as png file
+            if not take_photo:
+                path = 'photo'
+                print("Username: {}".format(username))
+                file_name = '{}.png'.format(username)
+                cv2.imwrite(os.path.join(path, file_name),frame)
+                take_photo = True
+            
         
-        #if math.floor(time.time()-start) == 7:
-        #break
+        if math.floor(time.time()-start) == 7:
+            cv2.putText(frame, "Photo taken! Now press 'Login'", (100, 200), font, 1.0, (0, 0, 255), 5)
+
+        if math.floor(time.time()-start) == 8:
+            break
 
         if face_detected and TOTAL == number:
             real_person_varified = True
@@ -395,16 +391,20 @@ def registerVideoStream(camera):
         yield (b'--frame\r\n'
                b'Content-Type: image/jpg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
 
-    print ("Before return")
     #video_capture.release()
     cv2.destroyAllWindows()
 #redirect('/profile')
 
 @app.route('/register_video_feed', methods=['GET', 'POST'])
 def register_video_feed():
-    response =  Response(registerVideoStream(VideoCamera()),
+    #get the username just entered
+    username = request.args.get('username')
+
+    #video stream
+    #pass web cam and username as arguments
+    response =  Response(registerVideoStream(VideoCamera(),username),
                          mimetype='multipart/x-mixed-replace; boundary=frame')
-    print (response)
+
     return response
 
 
