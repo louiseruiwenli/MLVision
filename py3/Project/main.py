@@ -76,14 +76,209 @@ def connect_db():
     return rv
 
 
-
+##############################################MAIN############################################################
 @app.route('/')
 def show_index():
     return render_template('main.html')
 
-@app.route('/login')
-def login():
-    return render_template('login.html')
+
+##############################################Login############################################################
+@app.route('/login', methods=['GET', 'POST'])
+def Username_login():
+    if request.method=='POST':
+        session['username'] = request.form['username']
+        return redirect('/login2')
+    return render_template('login_username.html')
+
+@app.route('/login2', methods=['GET', 'POST'])
+def Password_login():
+    if request.method=='POST':
+        session['password'] = request.form['password']
+        return redirect('/login3')
+    return render_template('login_password.html')
+
+@app.route('/login3', methods=['GET', 'POST'])
+def Photourl_login():
+    if request.method=='POST':
+        insertUser(session['username'], session['password'])
+        
+        return redirect('/profile')
+    return render_template('login_photo.html')
+
+def loginVideoStream(camera,username):
+    path = 'photo'
+    print("Username: {}".format(username))
+    file_name = '{}.png'.format(username)
+    file_path = os.path.join(path, file_name)
+    obama_image = face_recognition.load_image_file(file_path)
+    print(file_path)
+    
+    face_landmarks_list = face_recognition.face_landmarks(obama_image)
+    obama_face_encoding = face_recognition.face_encodings(obama_image)[0]
+    start = 0
+    
+    face_locations = []
+    face_encodings = []
+    face_names = []
+    process_this_frame = True
+    face_detected = False;
+    real_person_varified = False
+    start_counter = False
+    user_authenticated = False
+    
+    COUNTER = 0
+    TOTAL = 0
+    EYE_AR_CONSEC_FRAMES = 3
+    EYE_AR_THRESH = 0.2
+    
+    
+    number = randint(1,5)
+    
+    def eye_aspect_ratio(eye):
+        from scipy.spatial import distance as dist
+        # compute the euclidean distances between the two sets of
+        # vertical eye landmarks (x, y)-coordinates
+        A = dist.euclidean(eye[1], eye[5])
+        B = dist.euclidean(eye[2], eye[4])
+        # compute the euclidean distance between the horizontal
+        # eye landmark (x, y)-coordinates
+        C = dist.euclidean(eye[0], eye[3])
+        # compute the eye aspect ratio
+        ear = (A + B) / (2.0 * C)
+        # return the eye aspect ratio
+        return ear
+    
+    while True:
+        frame = camera.get_frame()
+        
+        # Resize frame of video to 1/4 size for faster face recognition processing
+        small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+        
+        # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
+        rgb_small_frame = small_frame[:, :, ::-1]
+        
+        # Only process every other frame of video to save time
+        if process_this_frame:
+            # Find all the faces and face encodings in the current frame of video
+            face_locations = face_recognition.face_locations(rgb_small_frame)
+            face_landmarks_list = face_recognition.face_landmarks(rgb_small_frame)
+            face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
+        
+        face_names = []
+        for face_encoding in face_encodings:
+            # See if the face is a match for the known face(s)
+            match = face_recognition.compare_faces([obama_face_encoding], face_encoding, 0.4)
+            name = "Unknown"
+            
+            if match[0]:
+                name = username
+                user_authenticated = True
+            else:
+                user_authenticated = False
+            
+            face_names.append(name)
+        
+        if not face_encodings:
+            face_detected = False
+
+        
+        process_this_frame = not process_this_frame
+        
+        if face_landmarks_list and face_landmarks_list[0]:
+            leftEye = face_landmarks_list[0]['left_eye']
+            rightEye = face_landmarks_list[0]['right_eye']
+            leftEAR = eye_aspect_ratio(leftEye)
+            rightEAR = eye_aspect_ratio(rightEye)
+            ear = (leftEAR + rightEAR) / 2.0
+            # check to see if the eye aspect ratio is below the blink
+            # threshold, and if so, increment the blink frame counter
+            if ear < EYE_AR_THRESH:
+                COUNTER += 1
+            # otherwise, the eye aspect ratio is not below the blink threshold
+            else:
+                # if the eyes were closed for a sufficient number of
+                # then increment the total number of blinks
+                if COUNTER >= EYE_AR_CONSEC_FRAMES:
+                    TOTAL += 1
+                    # reset the eye frame counter
+                    COUNTER = 0
+    
+        # Display the results
+        for (top, right, bottom, left), name in zip(face_locations, face_names):
+            # Scale back up face locations since the frame we detected in was scaled to 1/4 size
+            top *= 4
+            right *= 4
+            bottom *= 4
+            left *= 4
+            
+            # Draw a box around the face
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+            
+            # Draw a label with a name below the face
+            cv2.rectangle(frame, (left, bottom), (right, bottom), (0, 0, 255), cv2.FILLED)
+            face_detected = True
+
+
+
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        if face_detected:
+            cv2.putText(frame, "Face Detected", (100, 100), font, 1.0, (0, 0, 255), 3)
+            
+            if not user_authenticated:
+                cv2.putText(frame, "Authentication failed.", (100, 150), font, 0.7, (0, 0, 255), 3)
+                face_detected = False
+            
+            elif user_authenticated and not real_person_varified: #not user_authenticated
+                cv2.putText(frame, "Authentication succeeded.", (100, 150), font, 1.0, (0, 0, 255), 3)
+                cv2.putText(frame, "Now verifing real persion...", (100, 200), font, 1.0, (0, 0, 255), 3)
+                cv2.putText(frame, "Blink {} times".format(number), (100, 250), font, 1.0, (0, 0, 255), 3)
+                cv2.putText(frame, "Blinks: {}".format(TOTAL), (100, 300),font, 1.0, (0, 0, 255), 3)
+            elif user_authenticated and real_person_varified:
+                cv2.putText(frame, "Real Person Varified", (100, 150), font, 1.0, (0, 0, 255), 3)
+                cv2.putText(frame, "Now press 'Login'", (100, 200), font, 1.0, (0, 0, 255), 3)
+                if not start_counter:
+                    start = time.time()
+                    start_counter = True
+
+        
+        else: #not face detected
+            user_authenticated = False
+            real_person_varified = False
+            TOTAL = 0
+            start_counter = False
+            number = randint(1,5)
+        
+        #login and exit video stream
+        if math.floor(time.time()-start) == 1:
+            break
+
+        
+        if face_detected and TOTAL == number:
+            real_person_varified = True
+
+
+        ret, jpeg = cv2.imencode('.jpg', frame)
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
+
+
+    cv2.destroyAllWindows()
+
+@app.route('/login_video_feed', methods=['GET', 'POST'])
+def login_video_feed():
+    #get the username just entered
+    username = request.args.get('username')
+    
+    #video stream
+    #pass web cam and username as arguments
+    response =  Response(loginVideoStream(VideoCamera(),username),
+                         mimetype='multipart/x-mixed-replace; boundary=frame')
+                         
+    return response
+
+
+
+##############################################Login End#######################################################
 
 
 
@@ -391,9 +586,9 @@ def registerVideoStream(camera,username):
         yield (b'--frame\r\n'
                b'Content-Type: image/jpg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
 
-    #video_capture.release()
+
     cv2.destroyAllWindows()
-#redirect('/profile')
+
 
 @app.route('/register_video_feed', methods=['GET', 'POST'])
 def register_video_feed():

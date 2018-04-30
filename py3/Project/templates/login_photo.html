@@ -1,0 +1,18 @@
+{% extends "base_layout.html" %}
+
+  {% block body_content %}
+  <div class="camerawindow">
+    <div class="notes text-center">
+      <p>Learning your face..</p>
+    </div>
+
+  
+    <form method="POST" action="/login3">
+      <div class="video">
+        <img class="videostream" src="{{url_for('login_video_feed', username=session['username'])}}">
+      </div>
+
+      <button id="takephoto" class="btn btn-primary" type="submit">Login</button>
+    </form>
+  </div>
+  {% endblock%}

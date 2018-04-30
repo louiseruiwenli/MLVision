@@ -1,0 +1,16 @@
+{% extends "base_layout.html" %}
+
+  {% block body_content %}
+  <div class="usernameinfo text-center" id="username-wrapper">
+    <h3>Enter your username: </h3>
+
+    <form method="POST" action="/login">
+      <div class="input-wrapper">
+        <input type="text" name="username" id="username" placeholder="Username" required/>
+      </div>
+
+      <button id="afterusername" class="btn btn-primary" type="submit">Continue</button>
+    </form>
+  </div>
+
+    {% endblock %}
