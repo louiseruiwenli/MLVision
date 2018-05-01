@@ -430,10 +430,15 @@ class RegisterForm(Form):
 ####################################################Registration#########################################
 @app.route('/register', methods=['GET', 'POST'])
 def Username():
+    error = ""
     if request.method=='POST':
-        session['username'] = request.form['username']
-        return redirect('/register2')
-    return render_template('register_username.html')
+        check_user_exist = checkUsernameExit(request.form['username'])
+        if check_user_exist:
+            error = "Username already exists!"
+        else:
+            session['username'] = request.form['username']
+            return redirect('/register2')
+    return render_template('register_username.html', error = error)
 
 
 @app.route('/register2', methods=['GET', 'POST'])
