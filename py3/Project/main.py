@@ -38,6 +38,29 @@ def retrieveUsers():
     con.close()
     return users
 
+def checkUsernameExit(username):
+    con = sql.connect("database.db")
+    cur = con.cursor()
+    cur.execute("SELECT username FROM users WHERE username = '%s'"%str(username))
+    users = cur.fetchone()
+    print (users)
+    if users:
+        return True
+    else:
+        return False
+
+def checkPassword(username, password):
+    con = sql.connect("database.db")
+    cur = con.cursor()
+    cur.execute("SELECT password FROM users WHERE username = '%s'"%str(username))
+    correct_password = cur.fetchone()
+    print (correct_password[0])
+    if correct_password[0] == password:
+        return True
+    else:
+        return False
+
+
 ######################################Database setup end#######################################
 
 # Load default config and override config from an environment variable
@@ -85,17 +108,28 @@ def show_index():
 ##############################################Login############################################################
 @app.route('/login', methods=['GET', 'POST'])
 def Username_login():
+    error = ""
     if request.method=='POST':
-        session['username'] = request.form['username']
-        return redirect('/login2')
-    return render_template('login_username.html')
+        check_user_exist = checkUsernameExit(request.form['username'])
+        print (check_user_exist)
+        if check_user_exist:
+            session['username'] = request.form['username']
+            return redirect('/login2')
+        else:
+            error = "Username does not exit"
+    return render_template('login_username.html', error=error)
 
 @app.route('/login2', methods=['GET', 'POST'])
 def Password_login():
+    error = ""
     if request.method=='POST':
-        session['password'] = request.form['password']
-        return redirect('/login3')
-    return render_template('login_password.html')
+        check_password = checkPassword(session['username'], request.form['password'])
+        if check_password:
+            session['password'] = request.form['password']
+            return redirect('/login3')
+        else:
+            error = "Invalid password."
+    return render_template('login_password.html', error=error)
 
 @app.route('/login3', methods=['GET', 'POST'])
 def Photourl_login():
@@ -167,7 +201,7 @@ def loginVideoStream(camera,username):
         face_names = []
         for face_encoding in face_encodings:
             # See if the face is a match for the known face(s)
-            match = face_recognition.compare_faces([obama_face_encoding], face_encoding, 0.4)
+            match = face_recognition.compare_faces([obama_face_encoding], face_encoding, 0.45)
             name = "Unknown"
             
             if match[0]:
@@ -585,7 +619,6 @@ def registerVideoStream(camera,username):
         ret, jpeg = cv2.imencode('.jpg', frame)
         yield (b'--frame\r\n'
                b'Content-Type: image/jpg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
-
 
     cv2.destroyAllWindows()
 
