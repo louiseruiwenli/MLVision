@@ -7,6 +7,10 @@ $(document).ready(function(){
     window.location = "/register";
   });
 
+  $('#logout').click(function(){
+    window.location = "/";
+  })
+
 
 
 });

@@ -1,17 +1,18 @@
 {% extends "base_layout.html" %}
 
   {% block body_content %}
-  <div class="usernameinfo text-center" id="username-wrapper">
+  <div class="body-content text-center">
     <h3>Enter your username: </h3>
+    <p class="warning">{{error}}</p>
 
     <form method="POST" action="/login">
       <div class="input-wrapper">
         <input type="text" name="username" id="username" placeholder="Username" required/>
       </div>
 
-      <button id="afterusername" class="btn btn-primary" type="submit">Continue</button>
+      <button id="afterusername" class="btn continue" type="submit">Continue</button>
     </form>
-    {{error}}
+
   </div>
 
-    {% endblock %}
+  {% endblock %}

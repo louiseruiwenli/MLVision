@@ -1,6 +1,7 @@
 html,body{
   width: 100%;
   height: 100%;
+  font-family: "Lucida Console", Times, serif;
 }
 
 body{
@@ -9,18 +10,44 @@ body{
   flex-wrap: wrap;
 }
 
-a{
-  text-decoration: none;
-  color: black;
+.page-header-color{
+  background-size: auto;
+  background-repeat: no-repeat;
+  background-image: linear-gradient(to left top, #032448, #1e2f6b, #4b3389, #802d9e, #b906a8);
+  height: 150px;
 }
 
-a:hover{
+h1{
+  position: relative;
+  height: inherit;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#title{
+  color: white;
+}
+
+a{
   text-decoration: none;
-  color: black;
 }
 
 .page-body{
   flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  background: #F0F0F0;
+}
+
+.body-content{
+  flex-grow: 1;
+  justify-content: space-evenly;
+  width: 50%;
+  align-self: center;
+  align-items: center;
+  margin: 50px;
   display: flex;
   flex-direction: column;
 }
@@ -33,14 +60,55 @@ a:hover{
   display: flex;
 }
 
-button{
-  height:100px;
-  width: 200px;
+.btn-feature{
+  height:125px;
+  width: 210px;
   justify-content: center;
+  border-radius: 30px;
+  background-color: #C56CCC;
+  color: white;
+  font-size: 14pt;
+}
+
+.btn-feature:hover{
+  background-color: #9D56A2;
+  color: white;
+}
+
+.continue{
+  width: 210px;
+  height: 70px;
+  align-self: center;
+  border-radius: 20px;
+  background-color: #2CD9A2;
+  color: white;
+  font-size: 12pt;
+  border-top: 20px;
+}
+
+.continue:hover{
+  background-color: #219671;
+  color: white;
+}
+
+form{
+  flex-grow:1;
+  display: flex;
+  flex-direction: column;
+  justify-content:space-evenly;
 }
 
 .videostream{
   position: relative;
   height: 100%;
   width: 100%;
+}
+
+
+input{
+  background-color: #F0F0F0;
+}
+
+.warning{
+  color:#E66954;
 }

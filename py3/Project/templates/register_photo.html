@@ -6,13 +6,12 @@
       <p>Learning your face..<br> {{text}}</p>
     </div>
 
-    {% from "_formhelpers.html" import render_field %}
     <form method="POST" action="/register3">
       <div class="video">
         <img class="videostream" src="{{url_for('register_video_feed', username=session['username'])}}">
       </div>
 
-      <button id="takephoto" class="btn btn-primary" type="submit">Login</button>
+      <button id="takephoto" class="btn continue" type="submit">Login</button>
     </form>
   </div>
   {% endblock%}
